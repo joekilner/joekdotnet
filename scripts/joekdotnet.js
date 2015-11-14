@@ -5,6 +5,11 @@
 
     app.controller("mainPage", function ($scope, getStuff) {
         $scope.test = "placeholder";
+        $scope.items = _.map(_.range(10), function (val) {
+            return {
+                description: "Item " + val
+            };
+        });
     });
 
     app.service("getStuff", function ($http) {
