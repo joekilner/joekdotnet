@@ -1,15 +1,26 @@
 
 (function (window, angular, _, undefined)
 {
-    var app = angular.module("JoekDotNetApp", []);
+    var app = angular.module("JoekDotNetApp", ['ngMaterial']);
 
-    app.controller("mainPage", function ($scope, getStuff) {
+    app.config(function($mdThemingProvider) {
+        $mdThemingProvider.theme('default')
+            .primaryPalette('deep-purple')
+            .accentPalette('lime');
+    });
+
+    app.controller("MainPage", function ($scope, $mdSidenav, getStuff) {
         $scope.test = "placeholder";
         $scope.items = _.map(_.range(10), function (val) {
             return {
                 description: "Item " + val
             };
         });
+
+        this.toggleSidenav = function(menuId) {
+            $mdSidenav(menuId).toggle();
+        };
+
     });
 
     app.service("getStuff", function ($http) {

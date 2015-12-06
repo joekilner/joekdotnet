@@ -1,26 +1,88 @@
-body
-{
-  position: absolute;
+body {
   width: 100%;
   height: 100%;
+
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+div {
+  border: 0;
+  margin: 0;
+  padding: 0;
+
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+@block-width: 800px;
+@block-height: 160px;
+
+div.content {
   display: flex;
-  align-content: space-around;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
 
-  div.main-column {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: auto;
+  width: 100%;
+  height: 100%;
 
-    div.entry {
-      background-color: rgb(102, 204, 204);
-      border: 2px solid rgb(51, 102, 102);
-      height: 100px;
-      margin: 20px;
-      padding: 20px;
-      width: 800px;
-      flex-shrink: 0;
+  overflow-y: scroll;
+
+  background: linear-gradient(#ffbb22, #885511);
+
+  div {
+    height: @block-height;
+    width: @block-width;
+
+    color: lightgray;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 60;
+    text-indent: 30px;
+    text-decoration: none;
+    line-height: @block-height;
+
+    a {
+      display: block;
+      width: 100%;
+      height: 100%;
+
+      background-size: cover;
+      background-position: 250px, 50%;
+      background-repeat: no-repeat;
+
+      color: lightgray;
+      text-decoration: none;
+
     }
+  }
+
+  div.header{
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-image: url("../img/joekdotnet.png");
+  }
+
+  div.intro{
+    font-size: 32;
+    line-height: 2;
+    height: 200px;
+  }
+
+  div.blog-1 a{
+    background-image: url("../img/music.png");
+  }
+
+  div.blog-2 a{
+    background-image: url("../img/food.png");
+  }
+
+  div.blog-3 a{
+    background-image: url("../img/uni.png");
+  }
+
+  div.twitter a{
+    background-image: url("../img/tech.png");
   }
 }

@@ -1,23 +1,32 @@
 <html lang="en" ng-app="JoekDotNetApp">
 <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/png" href="http://example.com/favicon.png" />
-
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.0.0-rc1/angular-material.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.js"></script>
-
-    <script src="scripts/joekdotnet.js"></script>
-    <link rel="stylesheet/less" type="text/css" href="less/joekdotnet.less" />
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/less.js/2.5.3/less.min.js"></script>
-    <title>JoeK.net</title>
+  <meta charset="utf-8" />
+  <link rel="icon" type="image/png" href="http://example.com/favicon.png" />
+  <link rel="stylesheet/less" type="text/css" href="less/joekdotnet.less"/>
+  <title>JoeK.net</title>
 </head>
-<body ng-controller="mainPage">
-    <div class="main-column">
-        <div class="entry" ng-repeat="item in items">
-            {{item.description}}
-        </div>
-    </div>
+<body ng-controller="MainPage as mainPage" ng-cloak>
+  <div class="content">
+      <div class="header"></div>
+      <div class="intro">Not much to see here (yet) but I am on twitter and have some ill-fated blogs...</div>
+      <div class="twitter"><a href="http://twitter.com/joe_kilner">Twitter</a></div>
+      <div class="blog-1"><a href="http://joekilner.blogspot.com">Blog 1</a></div>
+      <div class="blog-2"><a href="http://dr3daemon.blogspot.com">Blog 2</a></div>
+      <div class="blog-3"><a href="http://graphcuts.blogspot.com">Blog 3</a></div>
+  </div>
+  <!-- Angular -->
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-animate.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-aria.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.0.0-rc1/angular-material.min.js"></script>
+
+  <!-- LoDash -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.js"></script>
+
+  <!-- JoeK.net -->
+  <script src="scripts/joekdotnet.js"></script>
+
+  <!-- Less -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/less.js/2.5.3/less.min.js"></script>
 </body>
 </html>
