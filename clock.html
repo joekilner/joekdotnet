@@ -1,0 +1,21 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="css/clock.css"/>
+    <title>Clock</title>
+  </head>
+  <body>
+    <div class="time" id="currentTime"></div>
+    <div class="date" id="currentDate"></div>
+    <script>
+      const timeElement = document.getElementById('currentTime');
+      const dateElement = document.getElementById('currentDate');
+      
+      setInterval(function () {
+        const currentDate = new Date();
+        timeElement.innerText = currentDate.toLocaleTimeString("en-GB");
+        dateElement.innerText = currentDate.toLocaleDateString("en-GB", {weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'});
+      }, 1000);
+    </script>
+  </body>
+</html>
