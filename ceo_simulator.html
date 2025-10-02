@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CEO Career Luck Simulator</title>
+  <meta name="description" content="A single‑file web app that simulates a CEO career driven by dice (luck), with persistent all‑time stats and cohort comparisons.">
+  <style>
+    :root{
+      --bg: #0b0f14;
+      --panel:#121824;
+      --panel-2:#0e1420;
+      --text:#e7edf7;
+      --muted:#9fb0c6;
+      --accent:#5cc8ff;
+      --accent-2:#8ef0a5;
+      --warn:#ffb454;
+      --bad:#ff6b6b;
+      --border: #1a2333;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{ margin:0; font: 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; color:var(--text); background: radial-gradient(1200px 800px at 15% 0%, #132032 0%, var(--bg) 60%) fixed; }
+    .app{display:grid; grid-template-columns: 1.25fr 1fr; gap:18px; padding:22px; max-width:1200px; margin:0 auto}
+    @media (max-width: 980px){ .app{ grid-template-columns: 1fr; } }
+    .card{ background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0) 30%), var(--panel); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow) }
+    .card .hd{ display:flex; align-items:center; justify-content:space-between; padding:18px 18px 10px 18px; border-bottom:1px solid var(--border)}
+    .card .bd{ padding:18px }
+    h1{font-size: clamp(22px, 3vw, 28px); margin:0; letter-spacing:.2px}
+    h2{font-size: 18px; margin:0 0 8px 0; color:var(--muted)}
+    .muted{ color:var(--muted) }
+    .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center }
+    .pill{ padding:6px 10px; border-radius:999px; border:1px solid var(--border); background:var(--panel-2); color:var(--muted); font-size:13px }
+    .btn{ appearance:none; border:none; background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01) 40%), var(--panel-2); color:var(--text); padding:10px 14px; border-radius:12px; cursor:pointer; border:1px solid var(--border); transition:transform .05s ease, box-shadow .2s ease; box-shadow:0 2px 0 rgba(0,0,0,.2)}
+    .btn:hover{ box-shadow:0 6px 18px rgba(0,0,0,.25)}
+    .btn:active{ transform: translateY(1px)}
+    .btn.primary{ background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.01)), #0f2a3e; border-color:#17364f }
+    .btn.good{ background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.01)), #0f3e2e; border-color:#1c5a45 }
+    .btn.warn{ background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.01)), #3e2f0f; border-color:#5a4a1c }
+    .btn:disabled{ opacity:.5; cursor:not-allowed }
+    .grid{ display:grid; gap:10px }
+    .grid.two{ grid-template-columns:1fr 1fr }
+    @media (max-width:700px){ .grid.two{ grid-template-columns:1fr }}
+
+    .hero{ display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center }
+    .avatar{ width:64px; height:64px; border-radius:16px; background: conic-gradient(from 120deg, #14324a, #0f1e2c, #14324a); border:1px solid var(--border); display:grid; place-items:center; font-size:28px }
+    .tag{ font-size:12px; letter-spacing:.3px; text-transform:uppercase; color:var(--muted); border:1px solid var(--border); background:var(--panel-2); padding:4px 8px; border-radius:999px }
+
+    .bar{ height:10px; background:#0b1320; border:1px solid var(--border); border-radius:999px; overflow:hidden }
+    .bar > i{ display:block; height:100%; background:linear-gradient(90deg, var(--accent), var(--accent-2)); width:0% }
+
+    .stat{ padding:10px 12px; border:1px solid var(--border); background:var(--panel-2); border-radius:12px; display:flex; flex-direction:column; gap:4px }
+    .stat b{ font-size:18px }
+
+    .diceWrap{ display:flex; gap:8px; flex-wrap:wrap }
+    .die{ width:44px; height:44px; border-radius:10px; background:linear-gradient(180deg, #142033, #0d1622); border:1px solid var(--border); display:grid; place-items:center; font-weight:700; color:#eaf7ff; box-shadow: inset 0 0 10px rgba(0,0,0,.25)}
+
+    .badge{ padding:6px 8px; border-radius:10px; font-size:12px; border:1px solid var(--border); background: #0f1b29; color:#cbe8ff }
+    .badge.good{ background:#0f2a22; color:#bdf5d6 }
+    .badge.bad{ background:#2a1414; color:#ffd3d3 }
+    .badge.neutral{ background:#1a1f28; color:#d5def0 }
+
+    .log{ max-height:300px; overflow:auto; border:1px solid var(--border); border-radius:12px; background:var(--panel-2) }
+    .log table{ width:100%; border-collapse:collapse; font-size:14px }
+    .log th,.log td{ padding:10px 12px; border-bottom:1px solid var(--border) }
+    .log th{ position:sticky; top:0; background:#0f1724; z-index:1; text-align:left }
+
+    .footerNote{ font-size:13px; color:var(--muted) }
+
+    svg{ display:block }
+    .spark{ height:46px }
+    .hist{ height:100px }
+
+    .table-like{ width:100%; border:1px solid var(--border); border-radius:12px; overflow:hidden }
+    .table-like header, .table-like footer{ padding:10px 12px; border-bottom:1px solid var(--border); background:#0f1724 }
+    .table-like footer{ border-top:1px solid var(--border); border-bottom:none }
+    .hof{ max-height:260px; overflow:auto }
+    .hof .rowi{ display:grid; grid-template-columns: 1fr auto auto; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border) }
+    .hof .rowi:last-child{ border-bottom:none }
+
+    .config{ display:grid; gap:10px; grid-template-columns:1fr 1fr; align-items:end }
+    .config .field{ display:flex; flex-direction:column; gap:6px }
+    .config input[type="number"], .config input[type="text"]{ background:#0c1420; border:1px solid var(--border); color:var(--text); border-radius:10px; padding:8px 10px }
+    .config label{ font-size:13px; color:var(--muted) }
+    .small{ font-size:12px; color:var(--muted) }
+    .linklike{ color:var(--accent); cursor:pointer; text-decoration:underline dotted; }
+
+    .cohortbox{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+    .cohortCard{ padding:10px 12px; border:1px solid var(--border); background:var(--panel-2); border-radius:12px }
+    .hbar{ height:12px; background:#0b1320; border:1px solid var(--border); border-radius:6px; overflow:hidden }
+    .hbar > i{ display:block; height:100%; background:linear-gradient(90deg, var(--accent), var(--accent-2)); width:0% }
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="CEO Career Luck Simulator">
+
+    <!-- LEFT: Current Career -->
+    <section class="card" id="careerCard">
+      <div class="hd">
+        <h1>Career Simulator</h1>
+        <div class="row">
+          <span class="tag" id="cohortTag">Baseline</span>
+          <span class="pill" id="seedPill" title="Current RNG seed">Seed: random</span>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="hero">
+          <div class="avatar" id="avatar">🏢</div>
+          <div>
+            <div class="row" style="justify-content:space-between">
+              <div>
+                <h2 id="ceoName">—</h2>
+                <div class="muted" id="titleLine">—</div>
+              </div>
+              <div class="stat" style="min-width:140px; text-align:right">
+                <span class="muted">Year</span>
+                <b><span id="yearNum">0</span> / 30</b>
+                <div class="bar" aria-label="progress"><i id="yearBar"></i></div>
+              </div>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <span class="badge" id="companyBadge">Company: —</span>
+              <span class="badge neutral" id="statusBadge">Status: —</span>
+              <span class="badge" id="diceBadge">Dice: 1</span>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn primary" id="rollBtn" title="Roll all dice (advance one year)">🎲 Roll Year (R)</button>
+            <button class="btn" id="newBtn" title="Start a fresh career">🌱 New Career (N)</button>
+          </div>
+        </div>
+
+        <div style="margin:14px 0 8px" class="muted">Dice this year</div>
+        <div class="diceWrap" id="diceWrap"></div>
+
+        <div class="grid two" style="margin-top:14px">
+          <div class="stat"><span class="muted">Current dice</span><b id="currentDice">1</b></div>
+          <div class="stat"><span class="muted">Peak dice</span><b id="peakDice">1</b></div>
+        </div>
+
+        <div style="margin-top:14px">
+          <div class="muted" style="margin-bottom:6px">Career trajectory</div>
+          <svg class="spark" id="spark" viewBox="0 0 300 46" aria-label="sparkline of dice over years"></svg>
+        </div>
+
+        <div style="margin-top:16px" class="log" aria-live="polite">
+          <table>
+            <thead><tr><th style="width:70px">Year</th><th>Rolls</th><th style="width:110px">Δ Dice</th><th style="width:110px">Total</th></tr></thead>
+            <tbody id="logBody"></tbody>
+          </table>
+        </div>
+
+        <div class="footerNote" style="margin-top:12px">
+          This toy models compounding opportunity. Early big rolls grant more attempts, which increases the chance of further success. All outcomes here are luck‑driven by design.
+        </div>
+
+        <details style="margin-top:10px">
+          <summary class="muted">Configuration for next career</summary>
+          <div class="config" style="margin-top:10px">
+            <div class="field">
+              <label for="seedInput">Seed (optional for reproducible runs)</label>
+              <input id="seedInput" type="text" placeholder="e.g. guildford‑demo" />
+              <span class="small">Leave blank for random.</span>
+            </div>
+            <div class="field">
+              <label for="startDiceInput">Starting dice</label>
+              <input id="startDiceInput" type="number" min="1" max="12" value="1" />
+              <span class="small">Baseline is 1.</span>
+            </div>
+            <div class="field">
+              <label for="bonusFirstYearInput">First‑year bonus dice</label>
+              <input id="bonusFirstYearInput" type="number" min="0" max="6" value="0" />
+              <span class="small">Extra dice rolled in Year 1 only.</span>
+            </div>
+            <div class="field">
+              <label for="plusOneInput">“+1” uses (auto)</label>
+              <input id="plusOneInput" type="number" min="0" max="12" value="0" />
+              <span class="small">Greedily upgrades 3→4, 4→5, or 5→6.</span>
+            </div>
+            <div class="field">
+              <label for="mentorSaveInput">Mentor safety net</label>
+              <input id="mentorSaveInput" type="checkbox" />
+              <span class="small">Once per career: if any 1s and you would hit 0 dice, convert a single 1→3.</span>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- RIGHT: All‑time Stats -->
+    <section class="card" id="statsCard">
+      <div class="hd">
+        <h1>All‑Time Stats</h1>
+        <div class="row">
+          <button class="btn" id="fastSimBtn" title="Run 50 auto careers using current config">⚡ Quick Sim ×50</button>
+          <button class="btn warn" id="resetBtn" title="Clear all stored stats">♻️ Reset Stats</button>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="grid two">
+          <div class="stat"><span class="muted">Total careers</span><b id="s_total">0</b></div>
+          <div class="stat"><span class="muted">Average length</span><b><span id="s_avgLen">0.0</span> yrs</b></div>
+          <div class="stat"><span class="muted">Median length</span><b><span id="s_medLen">0</span> yrs</b></div>
+          <div class="stat"><span class="muted">Retirements</span><b><span id="s_retire">0</span>%</b></div>
+          <div class="stat"><span class="muted">Burnouts (dice=0)</span><b><span id="s_burn">0</span>%</b></div>
+          <div class="stat"><span class="muted">Avg peak dice</span><b id="s_avgPeak">0.0</b></div>
+        </div>
+
+        <div style="margin-top:16px">
+          <div class="muted" style="margin-bottom:6px">Career length distribution (years)</div>
+          <svg class="hist" id="hist" viewBox="0 0 300 100" aria-label="histogram of career lengths"></svg>
+        </div>
+
+        <div style="margin-top:16px">
+          <div class="muted" style="margin-bottom:6px">Final dice distribution (ignoring 0) — 10-wide bins up to 150</div>
+          <svg class="hist" id="finalHist" viewBox="0 0 300 100" aria-label="histogram of final dice counts"></svg>
+        </div>
+
+        <div class="table-like" style="margin-top:16px">
+          <header>
+            <div class="row" style="justify-content:space-between; align-items:center">
+              <div class="muted">Hall of Fame (top careers)</div>
+              <div class="small"><span class="linklike" id="exportBtn">Export</span> · <label class="linklike" for="importFile" style="cursor:pointer">Import</label><input id="importFile" type="file" accept="application/json" style="display:none"></div>
+            </div>
+          </header>
+          <div class="hof" id="hofList"></div>
+          <footer class="small">Best by peak dice, breaking ties by final dice then length.</footer>
+        </div>
+
+        <div style="margin-top:16px" class="cohortbox">
+          <div class="cohortCard">
+            <div class="muted">Baseline cohort</div>
+            <div class="small" id="c_base_meta">0 careers</div>
+            <div class="small" style="margin-top:6px">Avg length</div>
+            <div class="hbar"><i id="c_base_len" style="width:0%"></i></div>
+            <div class="small" style="margin-top:6px">Retirement rate</div>
+            <div class="hbar"><i id="c_base_ret" style="width:0%"></i></div>
+          </div>
+          <div class="cohortCard">
+            <div class="muted">Boosted cohort</div>
+            <div class="small" id="c_boost_meta">0 careers</div>
+            <div class="small" style="margin-top:6px">Avg length</div>
+            <div class="hbar"><i id="c_boost_len" style="width:0%"></i></div>
+            <div class="small" style="margin-top:6px">Retirement rate</div>
+            <div class="hbar"><i id="c_boost_ret" style="width:0%"></i></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+  (function(){
+    // ---------- Utilities ----------
+    const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+    const choice = arr => arr[Math.floor(Math.random()*arr.length)];
+
+    function mulberry32(a){
+      return function(){
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      }
+    }
+    function hashStrToSeed(str){
+      let h = 2166136261;
+      for(let i=0;i<str.length;i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+      return h>>>0;
+    }
+
+    function rndInt(rng, min, max){ // inclusive
+      return Math.floor(rng()*(max-min+1))+min;
+    }
+
+    // ---------- Name & Company Flavour ----------
+    const FIRST = ["Alex","Sam","Jordan","Taylor","Casey","Charlie","Riley","Morgan","Avery","Elliot","Jamie","Robin","Drew","Hayden","Parker","Blake","Rowan","Reese","Finley","Quinn"];
+    const LAST = ["Ng","Okoye","Sharma","Patel","Garcia","Rossi","Khan","Murphy","Silva","Ivanov","Kowalski","Smith","Dubois","Hernandez","Liu","Novak","Santos","Yamamoto","Kim","Haddad"];
+    const SECTORS = ["AI", "Biotech", "Fintech", "Green Energy", "Gaming", "Space", "Robotics", "Mobility", "Cloud", "Cyber", "MedTech", "AgriTech"]; 
+    const FORMS = ["Ltd", "PLC", "Group", "Holdings", "Ventures", "Labs"];
+
+    function makePerson(rng){
+      const f = choice(FIRST), l = choice(LAST);
+      const sector = choice(SECTORS);
+      const comp = `${sector} ${choice(["Dynamics","Systems","Works","Nexus","Capital","Ware","Forge","Orbit","Pulse","Prime"])}`;
+      const form = choice(FORMS);
+      const name = `${f} ${l}`;
+      const company = `${comp} ${form}`;
+      const emoji = choice(["🦾","🚀","🌱","💸","🛰️","⚙️","🧬","🔐","☁️","🧪","🌾","🧠"]);
+      return {name, company, sector, emoji};
+    }
+
+    function titleFor(dice, maxDice){
+      if(dice<=0) return "Ex‑CEO / Advisor";
+      if(maxDice>=12) return "Chair of Mega‑Cap";
+      if(maxDice>=8) return "CEO, Global Titan";
+      if(maxDice>=5) return "CEO, Mid‑Cap";
+      if(maxDice>=3) return "Founder & CEO";
+      return "Founder";
+    }
+    function sizeBadge(dice){
+      if(dice<=0) return "Dissolved";
+      if(dice<=2) return "Startup";
+      if(dice<=4) return "Small";
+      if(dice<=7) return "Mid‑Cap";
+      if(dice<=10) return "Large";
+      return "Mega‑Cap";
+    }
+
+    // ---------- Persistence ----------
+    const LS_KEY = 'ceoSim.stats.v2';
+    function loadStats(){
+      // migrate v1 if present
+      try{
+        const v2 = localStorage.getItem(LS_KEY);
+        if(v2) return JSON.parse(v2);
+        const v1 = localStorage.getItem('ceoSim.stats.v1');
+        if(v1){ localStorage.setItem(LS_KEY, v1); return JSON.parse(v1); }
+      }catch{}
+      return {};
+    }
+    function saveStats(s){ localStorage.setItem(LS_KEY, JSON.stringify(s)); }
+
+    // Schema: store summaries only
+    function summariseCareer(c){
+      return {
+        id: c.id, name: c.name, company: c.company, sector: c.sector,
+        finalDice: c.finalDice, maxDice: c.maxDice, years: c.events.length,
+        ended: c.ended, seed: c.seed||null, startedWith: c.startedWith||1,
+        cohort: c.cohort, configSummary: c.configSummary, ts: Date.now()
+      };
+    }
+
+    function addCareerToStats(career){
+      const s = loadStats();
+      if(!s.careers) s.careers = [];
+      s.careers.push(summariseCareer(career));
+      if(s.careers.length>1000) s.careers = s.careers.slice(-1000);
+      saveStats(s);
+    }
+
+    function computeAggregates(){
+      const s = loadStats();
+      const arr = s.careers||[];
+      const n = arr.length||0;
+      const lengths = arr.map(x=>x.years).sort((a,b)=>a-b);
+      const avg = n? (lengths.reduce((a,b)=>a+b,0)/n):0;
+      const med = n? (lengths[Math.floor((n-1)/2)] + lengths[Math.ceil((n-1)/2)]) / 2 : 0;
+      const retire = n? Math.round(100*arr.filter(x=>x.ended==='retired').length/n):0;
+      const burn = n? Math.round(100*arr.filter(x=>x.ended==='burnout').length/n):0;
+      const avgPeak = n? (arr.reduce((a,b)=>a+b.maxDice,0)/n):0;
+      // Histogram 0..30 (career length)
+      const bins = Array(31).fill(0);
+      for(const L of lengths) bins[clamp(L,0,30)]++;
+      // Final dice histogram (ignore 0), 15 bins of width 10: 1–10, 11–20, …, 141–150
+const BIN_SIZE = 10, BIN_MAX = 150, BIN_COUNT = BIN_MAX / BIN_SIZE; // 15
+const fBins = Array(BIN_COUNT).fill(0); // indices 0..14
+for (const c of arr) {
+  const v = c.finalDice || 0;
+  if (v > 0) {
+    const idx = Math.min(Math.ceil(v / BIN_SIZE), BIN_COUNT) - 1; // cap into last bin
+    fBins[idx]++;
+  }
+}
+
+      // Hall of Fame
+      const hof = [...arr].sort((a,b)=>{
+        if(b.maxDice!==a.maxDice) return b.maxDice-a.maxDice;
+        if(b.finalDice!==a.finalDice) return b.finalDice-a.finalDice;
+        return b.years-a.years;
+      }).slice(0,12);
+      // Cohorts
+      const base = arr.filter(x=>x.cohort==='baseline');
+      const boost = arr.filter(x=>x.cohort==='boosted');
+      function cohortStats(list){
+        const m=list.length; if(!m) return {n:0, avgLen:0, retRate:0};
+        const avgLen = list.reduce((a,b)=>a+b.years,0)/m;
+        const retRate = 100*list.filter(x=>x.ended==='retired').length/m;
+        return {n:m, avgLen, retRate};
+      }
+      return {n, avg, med, retire, burn, avgPeak, bins, fBins, hof, cohorts:{ base:cohortStats(base), boost:cohortStats(boost) } };
+    }
+
+    // ---------- Career Engine ----------
+    function newCareer(seedStr, startDice, cfg){
+      const seed = seedStr && seedStr.trim()? hashStrToSeed(seedStr.trim()) : (Math.random()*2**32>>>0);
+      const rng = mulberry32(seed>>>0);
+      const person = makePerson(rng);
+      let dice = clamp(parseInt(startDice||1,10)||1, 1, 99);
+      const startedWith = dice;
+      const id = crypto && crypto.randomUUID? crypto.randomUUID() : ("id-"+Math.random().toString(36).slice(2));
+      const cohort = isBaseline(cfg, startedWith)? 'baseline' : 'boosted';
+      const configSummary = cfgSummary(cfg, startedWith);
+      const career = { id, seed, rng, name: person.name, company: person.company, sector: person.sector, emoji: person.emoji,
+        events: [], maxDice: dice, finalDice: dice, ended: null, startedWith, cohort, configSummary,
+        boosts: { plusOneLeft: cfg.plusOneUses||0, mentorAvailable: !!cfg.mentorSave, bonusFirstYear: cfg.bonusFirstYear||0 }
+      };
+      updateHeader(career, dice);
+      clearLog();
+      setSeedPill(seedStr? seedStr : 'random');
+      setDiceBadge(dice);
+      setStatus('In role', 'neutral');
+      updateSpark([]);
+      renderDiceFaces([]);
+      setYear(0);
+      setPeak(dice);
+      setCohortTag(cohort, configSummary);
+      return {career, dice};
+    }
+
+    function isBaseline(cfg, startDice){
+      return (startDice===1) && (!cfg.bonusFirstYear) && (!cfg.plusOneUses) && (!cfg.mentorSave);
+    }
+    function cfgSummary(cfg, startDice){
+      const items=[];
+      if(startDice!==1) items.push(`start:${startDice}`);
+      if(cfg.bonusFirstYear) items.push(`Y1+${cfg.bonusFirstYear}`);
+      if(cfg.plusOneUses) items.push(`+1×${cfg.plusOneUses}`);
+      if(cfg.mentorSave) items.push('mentor');
+      return items.join(' · ') || 'baseline';
+    }
+
+    function applyYear(career, dice){
+      const year = career.events.length + 1;
+      const k = dice + (year===1? (career.boosts.bonusFirstYear||0) : 0);
+      const rolls = [];
+      for(let i=0;i<k;i++) rolls.push(rndInt(career.rng,1,6));
+
+      // Auto apply +1 uses greedily to any of [5,4,3] in that order (each gives +1 delta)
+      let plusLeft = career.boosts.plusOneLeft||0;
+      if(plusLeft>0){
+        const idxs = [5,4,3].flatMap(val => rolls.map((v,i)=>({v,i})).filter(o=>o.v===val).map(o=>o.i));
+        for(const i of idxs){ if(plusLeft<=0) break; rolls[i] = Math.min(6, rolls[i]+1); plusLeft--; }
+        career.boosts.plusOneLeft = plusLeft;
+      }
+
+      // Map to deltas per die (updated rule: 1–3 => −1; 4 => 0; 5 => +1; 6 => +2)
+      const deltas = rolls.map(v=> v<=3? -1 : (v===4? 0 : (v===5? +1 : +2)) );
+      let delta = deltas.reduce((a,b)=>a+b,0);
+
+      // Mentor save: if about to hit zero and any 1s occurred, flip a single 1→3 (adds +1 to total delta)
+      let mentorUsedThisYear = false;
+      if((career.boosts.mentorAvailable) && (dice + delta <= 0)){
+        if(rolls.includes(1)){
+          delta += 1; // convert one −1 to 0
+          mentorUsedThisYear = true;
+          career.boosts.mentorAvailable = false;
+        }
+      }
+
+      let after = Math.max(0, dice + delta);
+      const evt = {year, rolls, deltas, totalDiceAfter: after, notes: mentorUsedThisYear? 'Mentor saved' : undefined};
+      career.events.push(evt);
+      career.maxDice = Math.max(career.maxDice, after);
+      career.finalDice = after;
+      let ended = null;
+      if(after<=0){ ended = 'burnout'; }
+      else if(year>=30){ ended = 'retired'; }
+      if(ended){ career.ended = ended; }
+      return {after, evt, ended, delta};
+    }
+
+    // ---------- UI Wiring ----------
+    const el = s => document.getElementById(s);
+    const rollBtn = el('rollBtn');
+    const newBtn = el('newBtn');
+    const resetBtn = el('resetBtn');
+    const fastSimBtn = el('fastSimBtn');
+    const seedInput = el('seedInput');
+    const startDiceInput = el('startDiceInput');
+    const bonusFirstYearInput = el('bonusFirstYearInput');
+    const plusOneInput = el('plusOneInput');
+    const mentorSaveInput = el('mentorSaveInput');
+
+    let state = { career: null, dice: 1 };
+    boot();
+
+    function boot(){ state = newCareer('', 1, {bonusFirstYear:0, plusOneUses:0, mentorSave:false}); refreshStatsUI(); bind(); }
+
+    function bind(){
+      rollBtn.addEventListener('click', onRoll);
+      newBtn.addEventListener('click', onNew);
+      resetBtn.addEventListener('click', onResetStats);
+      fastSimBtn.addEventListener('click', onQuickSim);
+      document.addEventListener('keydown', (e)=>{ if(e.key==='r'||e.key==='R') onRoll(); if(e.key==='n'||e.key==='N') onNew(); });
+    }
+
+    function gatherConfig(){
+      return {
+        bonusFirstYear: clamp(parseInt(bonusFirstYearInput.value||'0',10)||0, 0, 12),
+        plusOneUses: clamp(parseInt(plusOneInput.value||'0',10)||0, 0, 99),
+        mentorSave: !!mentorSaveInput.checked
+      };
+    }
+
+    function onRoll(){
+      if(!state.career || state.career.ended){ return; }
+      const {after, evt, ended, delta} = applyYear(state.career, state.dice);
+      state.dice = after;
+      appendLog(evt);
+      renderDiceFaces(evt.rolls);
+      setDiceBadge(after);
+      setPeak(state.career.maxDice);
+      setYear(evt.year);
+      updateSpark(state.career.events.map(e=>e.totalDiceAfter));
+      updateHeader(state.career, after);
+      setStatus( ended? (ended==='retired'? 'Retired 🎉' : 'Career over ☠️') : (delta >= 1 ? 'Good year' : (delta<0? 'Tough year' : 'Steady')), ended? (ended==='retired'?'good':'bad') : (delta >= 1 ? 'good' : (delta<0? 'bad' : 'neutral')) );
+
+      if(ended){ addCareerToStats(state.career); refreshStatsUI(); rollBtn.disabled = true; }
+    }
+
+    function onNew(){
+      const seedStr = seedInput.value;
+      const startDice = clamp(parseInt(startDiceInput.value||'1',10)||1,1,99);
+      const cfg = gatherConfig();
+      state = newCareer(seedStr, startDice, cfg);
+      rollBtn.disabled = false;
+      seedInput.value = seedStr;
+    }
+
+    function onResetStats(){ if(!confirm('This will clear all saved careers and Hall of Fame. Proceed?')) return; localStorage.removeItem(LS_KEY); refreshStatsUI(); }
+
+    function onQuickSim(){
+      const startDice = clamp(parseInt(startDiceInput.value||'1',10)||1,1,99);
+      const cfg = gatherConfig();
+      for(let i=0;i<50;i++){
+        let {career, dice} = newCareer('', startDice, cfg);
+        // replicate boosts for the auto career (newCareer sets pools)
+        while(!career.ended){
+          const res = applyYear(career, dice);
+          dice = res.after;
+          if(career.events.length>=30 || dice<=0){ career.ended = (dice<=0? 'burnout' : 'retired'); }
+        }
+        addCareerToStats(career);
+      }
+      refreshStatsUI();
+    }
+
+    // ---------- UI helpers ----------
+    function setYear(n){ el('yearNum').textContent = n; el('yearBar').style.width = (n/30*100).toFixed(1)+'%'; }
+    function setPeak(n){ el('peakDice').textContent = n; }
+    function setDiceBadge(n){ el('diceBadge').textContent = `Dice: ${n}`; el('currentDice').textContent = n; }
+    function setStatus(text, kind){ const b = el('statusBadge'); b.textContent = `Status: ${text}`; b.className = 'badge ' + (kind||'neutral'); }
+    function setSeedPill(s){ el('seedPill').textContent = `Seed: ${s}`; }
+    function setCohortTag(cohort, summary){ const t = el('cohortTag'); t.textContent = cohort==='baseline'? 'Baseline' : `Boosted (${summary})`; }
+
+    function updateHeader(career, dice){
+      el('avatar').textContent = career.emoji;
+      el('ceoName').textContent = career.name;
+      el('titleLine').textContent = `${titleFor(dice, career.maxDice)} at ${career.company}`;
+      const cb = el('companyBadge'); cb.textContent = `Company: ${sizeBadge(dice)}`; cb.className = 'badge ' + (dice>=career.maxDice? 'good' : '');
+    }
+
+    function clearLog(){ el('logBody').innerHTML=''; }
+    function appendLog(evt){
+      const tr = document.createElement('tr');
+      const sumDelta = evt.deltas.reduce((a,b)=>a+b,0);
+      const note = evt.notes? ` <span class="pill">${evt.notes}</span>` : '';
+      tr.innerHTML = `<td>${evt.year}</td>
+        <td>${evt.rolls.map(v=>`<span class=\"pill\">${v}</span>`).join(' ')}${note}</td>
+        <td>${sumDelta>0? '+'+sumDelta: sumDelta}</td>
+        <td>${evt.totalDiceAfter}</td>`;
+      el('logBody').prepend(tr);
+    }
+
+    function renderDiceFaces(rolls){ const w = el('diceWrap'); w.innerHTML = ''; for(const r of rolls){ const d = document.createElement('div'); d.className = 'die'; d.textContent = r; w.appendChild(d); } }
+
+    function updateSpark(series){
+      const svg = el('spark');
+      const W = 300, H = 46, PAD = 4;
+      const maxY = Math.max(1, ...series, 1);
+      const toX = (i)=> PAD + (W-2*PAD) * (i/(30));
+      const toY = (v)=> H - PAD - (H-2*PAD) * (v/(Math.max(maxY,1)));
+      let d = '';
+      for(let i=0;i<series.length;i++){
+        const x = toX(i+1), y = toY(series[i]);
+        d += (i? ' L':'M') + x.toFixed(2)+' '+y.toFixed(2);
+      }
+      const area = d ? `${d} L ${toX(series.length).toFixed(2)} ${H-PAD} L ${toX(1).toFixed(2)} ${H-PAD} Z` : '';
+      svg.innerHTML = `
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${getComputedStyle(document.documentElement).getPropertyValue('--accent')}" stop-opacity="0.9" />
+            <stop offset="100%" stop-color="${getComputedStyle(document.documentElement).getPropertyValue('--accent')}" stop-opacity="0.05" />
+          </linearGradient>
+        </defs>
+        <path d="${area}" fill="url(#g1)" opacity="0.35"></path>
+        <path d="${d}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--accent')}" stroke-width="2" />`;
+    }
+
+    function refreshStatsUI(){
+      const a = computeAggregates();
+      el('s_total').textContent = a.n;
+      el('s_avgLen').textContent = a.avg.toFixed(1);
+      el('s_medLen').textContent = (Math.round(a.med*10)/10).toString();
+      el('s_retire').textContent = a.retire;
+      el('s_burn').textContent = a.burn;
+      el('s_avgPeak').textContent = a.avgPeak.toFixed(1);
+      drawHist(a.bins);
+      drawFinalHist(a.fBins);
+      drawHOF(a.hof);
+      drawCohorts(a.cohorts);
+    }
+
+    function drawHist(bins){
+      const svg = el('hist');
+      const W=300,H=100,P=8;
+      const max = Math.max(1, ...bins);
+      const bw = (W-2*P)/bins.length;
+      let bars = '';
+      for(let i=0;i<bins.length;i++){
+        const v = bins[i];
+        const h = (H-2*P) * (v/max);
+        const x = P + i*bw + 1;
+        const y = H-P-h;
+        bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${h.toFixed(1)}" fill="#1e314a" />`;
+      }
+      const ticks = [0,10,20,30].map(t=>{ const x = P + t*bw + bw/2; return `<text x="${x.toFixed(1)}" y="${H-2}" font-size="9" text-anchor="middle" fill="#88a">${t}</text>`; }).join('');
+      svg.innerHTML = `<g>${bars}</g>${ticks}`;
+    }
+
+    function drawFinalHist(fBins){
+  const svg = el('finalHist');
+  const W=300,H=100,P=8;
+  const bins = fBins; // 15 bins of size 10
+  const max = Math.max(1, ...bins);
+  const bw = (W-2*P)/bins.length;
+  let bars='';
+  for(let i=0;i<bins.length;i++){
+    const v = bins[i];
+    const h = (H-2*P) * (v/max);
+    const x = P + i*bw + 1;
+    const y = H-P-h;
+    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${h.toFixed(1)}" fill="#293b57" />`;
+  }
+  // Label every other bin to avoid clutter: “1–10”, “21–30”, …, “141–150”
+  const labels = [];
+  for(let i=0;i<bins.length;i+=2){
+    const start = i*10 + 1, end = start + 9;
+    const x = P + i*bw + bw/2;
+    labels.push(`<text x="${x.toFixed(1)}" y="${H-2}" font-size="9" text-anchor="middle" fill="#88a">${start}–${end}</text>`);
+  }
+  svg.innerHTML = `<g>${bars}</g>${labels.join('')}`;
+}
+
+
+    function drawHOF(list){
+      const box = el('hofList');
+      box.innerHTML = '';
+      if(!list.length){
+        const d = document.createElement('div');
+        d.className = 'rowi';
+        d.innerHTML = '<div class="muted">No careers yet. Finish a run to populate.</div><div></div><div></div>';
+        box.appendChild(d);
+        return;
+      }
+      for(const c of list){
+        const di = document.createElement('div');
+        di.className = 'rowi';
+        const badge = `<span class="pill">${c.maxDice} peak</span>`;
+        const status = c.ended==='retired'? '🎉 Retired' : '☠️ Burnout';
+        const cohort = c.cohort==='baseline'? '' : ` · <span class="pill">${c.configSummary}</span>`;
+        di.innerHTML = `<div><b>${c.name}</b> — <span class="muted">${c.company}</span><br><span class="small">${status}, ${c.years} yrs, final ${c.finalDice} dice${cohort}</span></div><div>${badge}</div><div class="small muted">${new Date(c.ts).toLocaleDateString()}</div>`;
+        box.appendChild(di);
+      }
+    }
+
+    function drawCohorts(cs){
+      const base = cs.base, boost = cs.boost;
+      el('c_base_meta').textContent = `${base.n} careers`;
+      el('c_boost_meta').textContent = `${boost.n} careers`;
+      el('c_base_len').style.width = (clamp(base.avgLen,0,30)/30*100).toFixed(1)+'%';
+      el('c_boost_len').style.width = (clamp(boost.avgLen,0,30)/30*100).toFixed(1)+'%';
+      el('c_base_ret').style.width = clamp(base.retRate,0,100).toFixed(1)+'%';
+      el('c_boost_ret').style.width = clamp(boost.retRate,0,100).toFixed(1)+'%';
+    }
+
+    // Export / Import
+    el('exportBtn').addEventListener('click', ()=>{
+      const s = loadStats();
+      const blob = new Blob([JSON.stringify(s,null,2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'ceo-sim-stats.json';
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+    });
+    el('importFile').addEventListener('change', e=>{
+      const file = e.target.files && e.target.files[0];
+      if(!file) return;
+      const fr = new FileReader();
+      fr.onload = ()=>{
+        try{
+          const data = JSON.parse(fr.result);
+          if(!data || typeof data !== 'object') throw new Error('Invalid JSON');
+          localStorage.setItem(LS_KEY, JSON.stringify(data));
+          refreshStatsUI();
+        }catch(err){ alert('Import failed: '+err.message); }
+      };
+      fr.readAsText(file);
+    });
+
+  })();
+  </script>
+</body>
+</html>
